@@ -13,15 +13,33 @@ class DateController {
       month: this.currentDate.getMonth(),
     }
 
-    this.createYearSelect();
-    this.createMonthSelect();
+    this.yearSelector = createYearSelect();
+    this.monthSelector = createMonthSelect();
+    this.createHiddenInput = createHiddenInput();
 
     this.initedSelectedDate = this.initDate(this.selectedDate);
-    this.setSlider();
+
+    this.daysGrid = this.controlledSlider.daysGrid;
+
   }
 
   createDateControllerDom() {
     this.dateControllerDom = $('<div class="date-controll"></div>');
+  }
+
+  createHiddenInput() {
+    const value,
+          localValue = window.localStorage.getValue('last-date');
+
+    if(localValue) {
+      value = localValue;
+    } else {
+      value = ``
+    }
+
+    const hiddenInput = $(`<input class="calendar__hidden-input"
+                                  type="input"
+                                  value=""`)
   }
 
   createYearSelect() {
@@ -34,8 +52,9 @@ class DateController {
       }
     };
 
-    this.yearSelector = new DateSelector(selectParams);
-    this.dateControllerDom.prepend(this.yearSelector.selectorDom);
+    const yearSelector = new DateSelector(selectParams);
+    this.dateControllerDom.prepend(yearSelector.selectorDom);
+    return yearSelector;
   }
 
   createMonthSelect() {
@@ -44,8 +63,9 @@ class DateController {
       type: 'month',
     }
 
-    this.monthSelector = new DateSelector(selectParams);
-    this.dateControllerDom.prepend(this.monthSelector.selectorDom);
+    const monthSelector = new DateSelector(selectParams);
+    this.dateControllerDom.prepend(monthSelector.selectorDom);
+    return monthSelector;
   }
 
   changeSelectedDate(param, value) {
