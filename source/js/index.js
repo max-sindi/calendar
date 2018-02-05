@@ -6,5 +6,5 @@ const b = new Calendar({
   year: {
     start: 2000,
     finish: 2022,
-  }
+  },
 })

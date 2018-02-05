@@ -18,9 +18,9 @@ gulp.task('js:dev', () => {
                     sourcePath + 'js/Calendar.js',
                     sourcePath + 'js/index.js',
                     ])
-              .pipe( concat('bundle.js') )
               .pipe( babel() )
               .on('error', notify.onError() )
+              .pipe( concat('bundle.js') )
               .pipe(gulp.dest( buildPath + 'js/' ));
 })
 

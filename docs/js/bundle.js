@@ -85,6 +85,11 @@ var DateSelector = function () {
 
   return DateSelector;
 }();
+'use strict';
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var DateController = function () {
   function DateController(props) {
@@ -95,7 +100,7 @@ var DateController = function () {
     this.controlledCalendar = calendar;
     this.controlledSlider = calendar.slider;
 
-    this.createDateControllerDom();
+    this.dateControllerDom = this.createDateControllerDom();
 
     this.currentDate = new Date();
     this.selectedDate = {
@@ -103,17 +108,48 @@ var DateController = function () {
       month: this.currentDate.getMonth()
     };
 
-    this.createYearSelect();
-    this.createMonthSelect();
+    this.yearSelector = this.createYearSelect();
+    this.monthSelector = this.createMonthSelect();
+    this.dateHiddenInput = this.createHiddenInput();
 
     this.initedSelectedDate = this.initDate(this.selectedDate);
-    this.setSlider();
+
+    this.daysGrid = this.controlledSlider.daysGrid;
   }
 
   _createClass(DateController, [{
     key: 'createDateControllerDom',
     value: function createDateControllerDom() {
-      this.dateControllerDom = $('<div class="date-controll"></div>');
+      return $('<div class="date-controll"></div>');
+    }
+  }, {
+    key: 'createHiddenInput',
+    value: function createHiddenInput() {
+      var localValue = window.localStorage.getItem('last-date');
+      var value = void 0,
+          hiddenInput = void 0;
+
+      if (localValue) {
+        value = localValue;
+      } else {
+        value = this.toNormalView(new Date());
+      }
+
+      hiddenInput = $('<input class="calendar__hidden-input"\n                                  type="text"\n                                  value=' + value + '>');
+
+      this.dateControllerDom.prepend(hiddenInput);
+      return hiddenInput;
+    }
+  }, {
+    key: 'toNormalView',
+    value: function toNormalView(date) {
+      var monthNormalView = date.getMonth() + 1;
+
+      if (monthNormalView < 10) {
+        monthNormalView = '0' + monthNormalView;
+      }
+
+      return monthNormalView + '.' + date.getFullYear();
     }
   }, {
     key: 'createYearSelect',
@@ -127,8 +163,9 @@ var DateController = function () {
         }
       };
 
-      this.yearSelector = new DateSelector(selectParams);
-      this.dateControllerDom.prepend(this.yearSelector.selectorDom);
+      var yearSelector = new DateSelector(selectParams);
+      this.dateControllerDom.prepend(yearSelector.selectorDom);
+      return yearSelector;
     }
   }, {
     key: 'createMonthSelect',
@@ -138,8 +175,9 @@ var DateController = function () {
         type: 'month'
       };
 
-      this.monthSelector = new DateSelector(selectParams);
-      this.dateControllerDom.prepend(this.monthSelector.selectorDom);
+      var monthSelector = new DateSelector(selectParams);
+      this.dateControllerDom.prepend(monthSelector.selectorDom);
+      return monthSelector;
     }
   }, {
     key: 'changeSelectedDate',
@@ -189,6 +227,11 @@ var DateController = function () {
 
   return DateController;
 }();
+'use strict';
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Slider = function () {
   function Slider(props) {
@@ -197,13 +240,13 @@ var Slider = function () {
     this.controlledCalendar = props.controlledCalendar;
     this.calendarDom = $(this.controlledCalendar.calendarPaper);
 
-    this.createDom();
+    this.dom = this.createDom();
 
     this.domParams = null;
 
-    this.listenToGrabbing();
-
     this.daysGrid = this.createDaysGrid();
+
+    this.listenToGrabbing();
   }
 
   _createClass(Slider, [{
@@ -237,62 +280,25 @@ var Slider = function () {
   }, {
     key: 'createDom',
     value: function createDom() {
+      var sliderDom = $('<div id="calendar-slider__wrapper"></div>');
+      sliderDom.innerFrame = $('<div id="calendar-slider__inner"></div>');
+      sliderDom.daysPointer = createDaysPointer();
 
-      createOuterDom(this);
-      createrInnerFrame(this);
-      createDaysPointer(this);
+      sliderDom.prepend(sliderDom.innerFrame);
+      sliderDom.prepend(sliderDom.daysPointer);
 
-      function createOuterDom(that) {
-        var borderWidth = 20,
-            columnWidth = that.controlledCalendar.columnWidth,
-            fullWidth = columnWidth * 7 + borderWidth * 2;
+      return sliderDom;
 
-        var dom = $('<div id="calendar-slider__wrapper"></div>').css({
-          width: fullWidth,
-          height: '100%',
-          position: 'absolute',
-          top: '0',
-          left: '0',
-          boxSizing: 'border-box',
-          boxShadow: '0 0 10px 0 #e6e7e9',
-          border: borderWidth + 'px solid #fafafa'
-        });
-
-        that.dom = dom;
-        that.dom.borderWidth = borderWidth;
-      }
-
-      function createrInnerFrame(that) {
-        var domInsideFrame = $('<div id="calendar-slider__inner"></div>').css({
-          position: 'absolute',
-          top: '0',
-          left: '0',
-          right: '0',
-          bottom: '0',
-          boxShadow: 'inset 0 0 10px 0 #aFb0b2'
-        });
-
-        that.dom.prepend(domInsideFrame);
-      }
-
-      function createDaysPointer(that) {
-        var daysPointer = $('<div class="days-pointer"></div>').css({
-          display: 'flex',
-          justifyContent: 'space-between',
-          textAlign: 'center'
-        });
-
-        var days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+      function createDaysPointer() {
+        var daysDom = $('<div class="days-pointer"></div>'),
+            days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
         for (var i = 6; i >= 0; i--) {
-          var day = $('<div class="days-pointer__day"> ' + days[i] + ' </div>').css({
-            flexGrow: '1'
-          });
-
-          daysPointer.prepend(day);
+          var day = $('<div class="days-pointer__day">' + days[i] + '</div>');
+          daysDom.prepend(day);
         }
 
-        that.dom.prepend(daysPointer);
+        return daysDom;
       }
     }
   }, {
@@ -323,10 +329,10 @@ var Slider = function () {
       var currentLeft = slider.position().left,
           requireDistance = currentLeft - left,
           fluency = 50,
-          frequency = 5,
+          frequency = 1,
           // the lower the faster
-      i = 0,
-          step = requireDistance / fluency;
+      step = requireDistance / fluency,
+          i = 0;
 
       // each iteration  will be move slider at one step
       var timer = setInterval(function () {
@@ -376,54 +382,159 @@ var Slider = function () {
 
   return Slider;
 }();
+'use strict';
 
-var Calendar = function Calendar(props) {
-  _classCallCheck(this, Calendar);
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-  var idSelector = '#' + props.id;
-  this.props = props;
-  this.target = $(idSelector);
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-  this.calendarPaper = $('<div class="calendar-paper"></div>');
+var Calendar = function () {
+  function Calendar(props) {
+    _classCallCheck(this, Calendar);
 
-  if (props.customStyles) {
+    if (!props.id) {
+      throw new Error('Calendar must have id parameter');
+    }
 
-    var width = '760';
-    var calendarPaperStyles = {
-      width: width,
-      height: '380',
-      background: 'url(../img/forebruary-body.jpg) no-repeat center center / cover content-box',
-      padding: '20px 15px',
-      position: 'relative'
-    };
+    this.props = props;
+    this.htmlSelectors = this.createSelectorsStore();
 
-    this.calendarPaper.css(calendarPaperStyles);
-    this.columnWidth = Math.floor(+width / 13);
-  } else {
-    var _width = $(idSelector).css('width');
-    this.columnWidth = Math.floor(+_width / 13);
+    this.idSelector = '#' + props.id;
+    this.target = $(this.idSelector);
+
+    this.calendarPaper = this.createCalendarDom();
+    this.target.prepend(this.calendarPaper);
+
+    this.columnWidth = this.calcColumnWidth();
+
+    this.slider = this.createSlider();
+    this.dateController = this.createDateController();
+
+    if (props.customStyles) {
+      this.applyCustomStyles();
+    }
   }
-  // debugger
 
-  this.target.prepend(this.calendarPaper);
+  _createClass(Calendar, [{
+    key: 'applyCustomStyles',
+    value: function applyCustomStyles() {
+      appllyCalendarCss(this);
+      applySliderCss(this);
 
-  // create slider
-  var sliderParams = {
-    columnWidth: this.columnWidth,
-    calendar: this
-  };
-  this.slider = new Slider({
-    controlledCalendar: this
-  });
-  this.calendarPaper.prepend(this.slider.dom);
+      function appllyCalendarCss(that) {
+        var width = 760;
+        var css = {
+          width: width,
+          height: '380',
+          background: 'url(../img/forebruary-body.jpg) no-repeat center center / cover content-box',
+          padding: '20px 15px',
+          position: 'relative'
+        };
 
-  // create date cotrollers
-  this.dateController = new DateController({
-    controlledCalendar: this
-  });
-  this.target.prepend(this.dateController.dateControllerDom);
-};
+        that.calendarPaper.css(css);
+        that.columnWidth = width / 13;
+      }
 
+      function applySliderCss(that) {
+        var cssOuter = {
+          width: that.columnWidth * 7 + 40,
+          height: '100%',
+          position: 'absolute',
+          top: '0',
+          // left: '0',
+          boxSizing: 'border-box',
+          boxShadow: '0 0 10px 0 #e6e7e9',
+          border: '20px solid #fafafa',
+          cursor: "col-resize"
+        },
+            cssInnerFrame = {
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          boxShadow: 'inset 0 0 10px 0 #afb0b2'
+        },
+            cssDaysPointer = {
+          display: 'flex',
+          justifyContent: 'space-between',
+          textAlign: 'center'
+        },
+            cssDaysPointer__Day = {
+          flexGrow: '1'
+        },
+            sliderDom = that.slider.dom;
+
+        applyCss([{
+          obj: sliderDom,
+          css: cssOuter
+        }, {
+          obj: sliderDom.innerFrame,
+          css: cssInnerFrame
+        }, {
+          obj: sliderDom.daysPointer,
+          css: cssDaysPointer
+        }, {
+          obj: sliderDom.daysPointer.children(),
+          css: cssDaysPointer__Day
+        }]);
+
+        function applyCss(arr) {
+          arr.forEach(function (item, index) {
+            item.obj.css(item.css);
+          });
+        }
+      }
+    }
+  }, {
+    key: 'createSelectorsStore',
+    value: function createSelectorsStore() {
+      var commonId = this.props.id;
+
+      var classes = {
+        calendarOuter: 'calendar-paper ' + commonId + '-calendar-paper'
+      },
+          ids = {
+        calendarOuter: commonId + '-calendar-paper'
+      };
+
+      return { classes: classes, ids: ids };
+    }
+  }, {
+    key: 'calcColumnWidth',
+    value: function calcColumnWidth() {
+      var width = this.calendarPaper.width();
+      return Math.floor(+width / 13);
+    }
+  }, {
+    key: 'createCalendarDom',
+    value: function createCalendarDom() {
+      var selectors = this.htmlSelectors;
+
+      return $('<div class=' + selectors.classes.calendarOuter + '\n                      id=' + selectors.ids.calendarOuter + '></div>');
+    }
+  }, {
+    key: 'createSlider',
+    value: function createSlider() {
+      var slider = new Slider({
+        controlledCalendar: this
+      });
+      this.calendarPaper.prepend(slider.dom);
+      return slider;
+    }
+  }, {
+    key: 'createDateController',
+    value: function createDateController() {
+      var dateController = new DateController({
+        controlledCalendar: this
+      });
+      this.target.prepend(dateController.dateControllerDom);
+      return dateController;
+    }
+  }]);
+
+  return Calendar;
+}();
 'use strict';
 
 var b = new Calendar({

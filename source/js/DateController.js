@@ -5,7 +5,7 @@ class DateController {
     this.controlledCalendar = calendar;
     this.controlledSlider = calendar.slider;
 
-    this.createDateControllerDom();
+    this.dateControllerDom = this.createDateControllerDom();
 
     this.currentDate = new Date();
     this.selectedDate = {
@@ -13,9 +13,9 @@ class DateController {
       month: this.currentDate.getMonth(),
     }
 
-    this.yearSelector = createYearSelect();
-    this.monthSelector = createMonthSelect();
-    this.createHiddenInput = createHiddenInput();
+    this.yearSelector = this.createYearSelect();
+    this.monthSelector = this.createMonthSelect();
+    this.dateHiddenInput = this.createHiddenInput();
 
     this.initedSelectedDate = this.initDate(this.selectedDate);
 
@@ -24,22 +24,35 @@ class DateController {
   }
 
   createDateControllerDom() {
-    this.dateControllerDom = $('<div class="date-controll"></div>');
+    return $('<div class="date-controll"></div>');
   }
 
   createHiddenInput() {
-    const value,
-          localValue = window.localStorage.getValue('last-date');
+    const localValue = window.localStorage.getItem('last-date');
+    let value, hiddenInput;
 
     if(localValue) {
       value = localValue;
     } else {
-      value = ``
+      value = this.toNormalView( new Date() );
     }
 
-    const hiddenInput = $(`<input class="calendar__hidden-input"
-                                  type="input"
-                                  value=""`)
+    hiddenInput = $(`<input class="calendar__hidden-input"
+                                  type="text"
+                                  value=${value}>`);
+
+    this.dateControllerDom.prepend(hiddenInput);
+    return hiddenInput;
+  }
+
+  toNormalView(date) {
+    let monthNormalView = date.getMonth() + 1;
+
+    if(monthNormalView < 10) {
+      monthNormalView = '0' + monthNormalView;
+    }
+
+    return monthNormalView + '.' + date.getFullYear();
   }
 
   createYearSelect() {
